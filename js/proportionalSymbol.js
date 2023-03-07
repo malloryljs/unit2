@@ -20,15 +20,16 @@ function createMap(){
     getData();
 };
 
+
 function calculateMinValue(data){
     //create empty array to store all data values
     var allValues = [];
     //loop through each city
     for(var site of data.features){
         //loop through each year
-        for(var date = 0507; date <= 1223; date+=5){
+        for(var date = 0507; date <= 1223; date+=1){
               //get population for current year
-              var value = site.properties["Date"+ String(date)];
+              var value = site.properties["date_"+ String(date)];
               //add value to array
               if (value > 0)
               allValues.push(value);
@@ -105,13 +106,45 @@ function createSequenceControls(){
     document.querySelector("#panel").insertAdjacentHTML('beforeend',slider);
     document.querySelector('#panel').insertAdjacentHTML('beforeend','<button class="step" id="forward">Forward</button>');
     document.querySelector('#forward').insertAdjacentHTML('beforeend',"<img src='img/forward.png'>")
-    document.querySelector(".range-slider").max = 6;
+    document.querySelector(".range-slider").max = 20;
     document.querySelector(".range-slider").min = 0;
     document.querySelector(".range-slider").value = 0;
     document.querySelector(".range-slider").step = 1;
     document.querySelector('#panel').insertAdjacentHTML('beforeend','<button class="step" id="reverse">Reverse</button>');
     document.querySelector('#reverse').insertAdjacentHTML('beforeend',"<img src='img/reverse.png'>")
     document.addEventListener('DOMContentLoaded',createMap)
+     //Below Example 3.6 in createSequenceControls()
+    //Step 5: click listener for buttons
+    document.querySelectorAll('.step').forEach(function(step){
+        step.addEventListener("click", function(){
+            //sequence
+        })
+    })
+
+    //Step 5: input listener for slider
+    document.querySelector('.range-slider').addEventListener('input', function(){            
+        var index = this.value;
+        console.log(index)
+    });
+    document.querySelectorAll('.step').forEach(function(step){
+        step.addEventListener("click", function(){
+            var index = document.querySelector('.range-slider').value;
+
+            //Step 6: increment or decrement depending on button clicked
+            if (step.id == 'forward'){
+                index++;
+                //Step 7: if past the last attribute, wrap around to first attribute
+                index = index > 20 ? 0 : index;
+            } else if (step.id == 'reverse'){
+                index--;
+                //Step 7: if past the first attribute, wrap around to last attribute
+                index = index < 0 ? 20 : index;
+            };
+
+            //Step 8: update slider
+            document.querySelector('.range-slider').value = index;
+        })
+    })
 };
 
 //Above Example 3.10...Step 3: build an attributes array from the data
@@ -132,6 +165,8 @@ function processData(data){
     return attributes;
 };
 
+
+
 //Step 2: Import GeoJSON data
 function getData(){
     //load the data
@@ -147,6 +182,32 @@ function getData(){
             createPropSymbols(json, attributes);
             createSequenceControls();
         })
+};
+
+//Step 10: Resize proportional symbols according to new attribute values
+function updatePropSymbols(attribute){
+    map.eachLayer(function(layer){
+          //Example 3.18 line 4
+          if (layer.feature && layer.feature.properties[attribute]){
+            //access feature properties
+            var props = layer.feature.properties;
+
+            //update each feature's radius based on new attribute values
+            var radius = calcPropRadius(props[attribute]);
+            layer.setRadius(radius);
+
+            //add city to popup content string
+            var popupContent = "<p><b>City:</b> " + props.City + "</p>";
+
+            //add formatted attribute to panel content string
+            var year = attribute.split("_")[1];
+            popupContent += "<p><b>Population in " + year + ":</b> " + props[attribute] + " million</p>";
+
+            //update popup content            
+            popup = layer.getPopup();            
+            popup.setContent(popupContent).update();
+        };
+    });
 };
 
 
