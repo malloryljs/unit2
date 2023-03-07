@@ -1,57 +1,41 @@
-/* Map of GeoJSON data from Central_Sands_Lake_StudyFiltered.geojson */
+/* Example from Leaflet Quick Start Guide*/
 
+var map = L.map('map').setView([51.505, -0.09], 13);
 
-//declare map var in global scope
-var map;
-//function to instantiate the Leaflet map
-function createMap(){
-    //create the map
-    map = L.map('map', {
-        center: [20, 0],
-        zoom: 2
-    });
+//add tile layer
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);  var marker = L.marker([51.5, -0.09]).addTo(map);
 
-    //add OSM base tilelayer
-    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-    }).addTo(map);
+var circle = L.circle([51.508, -0.11], {
+    color: 'red',
+    fillColor: '#f03',
+    fillOpacity: 0.5,    radius: 500
+}).addTo(map);
 
-    //call getData function
-    getData();
-};
+var polygon = L.polygon([
+    [51.509, -0.08],
+    [51.503, -0.06],
+    [51.51, -0.047]
+]).addTo(map);
 
+marker.bindPopup("<strong>Hello world!</strong><br />I am a popup.").openPopup();
+circle.bindPopup("I am a circle.");
+polygon.bindPopup("I am a polygon.");
 
-//added at Example 2.3 line 20...function to attach popups to each mapped feature
-function onEachFeature(feature, layer) {
-    //no property named popupContent; instead, create html string with all properties
-    var popupContent = "";
-    if (feature.properties) {
-        //loop to add feature property names and values to html string
-        for (var property in feature.properties){
-            popupContent += "<p>" + property + ": " + feature.properties[property] + "</p>";
-        }
-        layer.bindPopup(popupContent);
-    };
-};
+var popup = L.popup()
+    .setLatLng([51.5, -0.09])
+    .setContent("I am a standalone popup.")
+    .openOn(map);
 
-//function to retrieve the data and place it on the map
-function getData(){
-    //load the data
-    fetch("data/Central_Sands_Lake_StudyFiltered.geojson")
-        .then(function(response){
-            return response.json();
-        })
-        .then(function(json){            
-        
-            
-            //create a Leaflet GeoJSON layer and add it to the map
-            L.geoJson(json, {
-                onEachFeature: onEachFeature
-            }).addTo(map);
-        });
-};
+var popup = L.popup();
 
+function onMapClick(e) {
+    popup
+        .setLatLng(e.latlng)
+        .setContent("You clicked the map at " + e.latlng.toString())
+        .openOn(map);
+}
 
-
-
-document.addEventListener('DOMContentLoaded',createMap)
+map.on('click', onMapClick);
