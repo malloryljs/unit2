@@ -29,14 +29,14 @@ function calculateMinValue(data){
         //loop through each year
         for(var date = 0507; date <= 1223; date+=1){
               //get population for current year
-              var value = site.properties["date_"+ String(date)];
+              var value = site.properties["2019_"+ String(date)];
               //add value to array
               if (value > 0)
               allValues.push(value);
         }
     }
     //get minimum value of our array
-    var minValue = Math.min(...allValues)
+    var minValue = Math.min(allValues)
 
     return minValue;
 }
@@ -48,7 +48,7 @@ function calcPropRadius(attValue) {
     //Flannery Apperance Compensation formula
     if (attValue > 0)
     var radius = 1.0083 * Math.pow(attValue/minValue,0.5715) * minRadius
-    else 
+    else if (attValue == "")
     var radius = 7
     return radius;
 };
@@ -56,7 +56,7 @@ function calcPropRadius(attValue) {
 //function to convert markers to circle markers
 function pointToLayer(feature, latlng, attributes){
     //Determine which attribute to visualize with proportional symbols
-    var attribute = attributes[1];
+    var attribute = attributes[0];
     //check
     console.log(attribute)
 
@@ -106,7 +106,7 @@ function createSequenceControls(){
     document.querySelector("#panel").insertAdjacentHTML('beforeend',slider);
     document.querySelector('#panel').insertAdjacentHTML('beforeend','<button class="step" id="forward">Forward</button>');
     document.querySelector('#forward').insertAdjacentHTML('beforeend',"<img src='img/forward.png'>")
-    document.querySelector(".range-slider").max = 20;
+    document.querySelector(".range-slider").max = 7;
     document.querySelector(".range-slider").min = 0;
     document.querySelector(".range-slider").value = 0;
     document.querySelector(".range-slider").step = 1;
@@ -134,11 +134,11 @@ function createSequenceControls(){
             if (step.id == 'forward'){
                 index++;
                 //Step 7: if past the last attribute, wrap around to first attribute
-                index = index > 20 ? 0 : index;
+                index = index > 7 ? 0 : index;
             } else if (step.id == 'reverse'){
                 index--;
                 //Step 7: if past the first attribute, wrap around to last attribute
-                index = index < 0 ? 20 : index;
+                index = index < 0 ? 7 : index;
             };
 
             //Step 8: update slider
@@ -158,7 +158,7 @@ function processData(data){
     //push each attribute name into attributes array
     for (var attribute in properties){
         //only take attributes with population values
-        if (attribute.indexOf("Pop") > -1){
+        if (attribute.indexOf("2019") > -1){
             attributes.push(attribute);
         };
     };
@@ -197,11 +197,11 @@ function updatePropSymbols(attribute){
             layer.setRadius(radius);
 
             //add city to popup content string
-            var popupContent = "<p><b>City:</b> " + props.City + "</p>";
+            var popupContent = "<p><b>Site:</b> " + props.site + "</p>";
 
             //add formatted attribute to panel content string
-            var year = attribute.split("_")[1];
-            popupContent += "<p><b>Population in " + year + ":</b> " + props[attribute] + " million</p>";
+            var date = attribute.split("_")[1];
+            popupContent += "<p><b>Depth to water on " + date + ":</b> " + props[attribute] + " feet</p>";
 
             //update popup content            
             popup = layer.getPopup();            
