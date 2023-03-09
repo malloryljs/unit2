@@ -27,17 +27,18 @@ function calculateMinValue(data){
     //loop through each city
     for(var site of data.features){
         //loop through each year
-        for(var date = 0507; date <= 1223; date+=1){
-              //get population for current year
-              var value = site.properties["2019_"+ String(date)];
+        for(var date = 05; date <= 12; date+=1){
+              //get population for current year    
+              var value = site.properties["d2019_"+ String(date)];
               //add value to array
               if (value > 0)
               allValues.push(value);
         }
     }
+    
     //get minimum value of our array
-    var minValue = Math.min(allValues)
-
+    var minValue = Math.min(...allValues)
+console.log(minValue)
     return minValue;
 }
 
@@ -48,8 +49,11 @@ function calcPropRadius(attValue) {
     //Flannery Apperance Compensation formula
     if (attValue > 0)
     var radius = 1.0083 * Math.pow(attValue/minValue,0.5715) * minRadius
-    else if (attValue == "")
+    else
     var radius = 7
+
+    console.log(radius)
+
     return radius;
 };
 
@@ -75,7 +79,7 @@ function pointToLayer(feature, latlng, attributes){
 
     //Give each feature's circle marker a radius based on its attribute value
     options.radius = calcPropRadius(attValue);
-
+    console.log(calcPropRadius(attValue))
     //create circle marker layer
     var layer = L.circleMarker(latlng, options);
 
@@ -100,7 +104,7 @@ function createPropSymbols(data, attributes){
     }).addTo(map);
 };
 
-function createSequenceControls(){
+function createSequenceControls(attributes){
     //create range input element (slider)
     var slider = "<input class='range-slider' type='range'></input>";
     document.querySelector("#panel").insertAdjacentHTML('beforeend',slider);
@@ -114,17 +118,13 @@ function createSequenceControls(){
     document.querySelector('#reverse').insertAdjacentHTML('beforeend',"<img src='img/reverse.png'>")
     document.addEventListener('DOMContentLoaded',createMap)
      //Below Example 3.6 in createSequenceControls()
-    //Step 5: click listener for buttons
-    document.querySelectorAll('.step').forEach(function(step){
-        step.addEventListener("click", function(){
-            //sequence
-        })
-    })
 
     //Step 5: input listener for slider
     document.querySelector('.range-slider').addEventListener('input', function(){            
         var index = this.value;
         console.log(index)
+        updatePropSymbols(attributes[index]);
+
     });
     document.querySelectorAll('.step').forEach(function(step){
         step.addEventListener("click", function(){
@@ -143,6 +143,8 @@ function createSequenceControls(){
 
             //Step 8: update slider
             document.querySelector('.range-slider').value = index;
+            updatePropSymbols(attributes[index]);
+
         })
     })
 };
@@ -154,14 +156,15 @@ function processData(data){
 
     //properties of the first feature in the dataset
     var properties = data.features[0].properties;
-
+    console.log(properties)
     //push each attribute name into attributes array
     for (var attribute in properties){
         //only take attributes with population values
-        if (attribute.indexOf("2019") > -1){
+        if (attribute.indexOf("d") > -1){
             attributes.push(attribute);
         };
     };
+    console.log(attributes)
     return attributes;
 };
 
@@ -180,7 +183,7 @@ function getData(){
             minValue = calculateMinValue(json);
             //call function to create proportional symbols
             createPropSymbols(json, attributes);
-            createSequenceControls();
+            createSequenceControls(attributes);
         })
 };
 
