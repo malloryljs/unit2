@@ -8,8 +8,9 @@ function createMap(){
 
     //create the map
     map = L.map('map', {
-        center: [0, 0],
-        zoom: 2
+        center: [43.915092486367996, -89.51349390070169],
+        zoom: 9
+
     });
 
     //add OSM base tilelayer
@@ -79,6 +80,7 @@ function calcStats(data){
               //get population for current year
               var value = site.properties["d2019_"+ String(date)];
               //add value to array
+              if (value > 0)
               allValues.push(value);
         }
     }
@@ -157,6 +159,10 @@ function createSequenceControls(attributes){
         }});
 
     map.addControl(new SequenceControl());  
+    document.querySelector(".range-slider").max = 7;
+    document.querySelector(".range-slider").min = 0;
+    document.querySelector(".range-slider").value = 0;
+    document.querySelector(".range-slider").step = 1;
     document.querySelectorAll('.step').forEach(function(step){
         step.addEventListener("click", function(){
             var index = document.querySelector('.range-slider').value;
@@ -201,7 +207,7 @@ function createLegend(attributes){
             container.innerHTML = '<p class="temporalLegend">Depth to water in <span class="date">2019_5</span></p>';
 
             //Step 1: start attribute legend svg string
-            var svg = '<svg id="attribute-legend" width="130px" height="130px">';
+            var svg = '<svg id="attribute-legend" width="200px" height="200px">';
 
             //array of circle names to base loop on
             var circles = ["max", "mean", "min"];
@@ -211,16 +217,16 @@ function createLegend(attributes){
 
                 //Step 3: assign the r and cy attributes            
                 var radius = calcPropRadius(dataStats[circles[i]]);           
-                var cy = 130 - radius;            
+                var cy =100 - radius;            
     
                 //circle string            
-                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#F47821" fill-opacity="0.8" stroke="#000000" cx="65"/>';
+                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#F47821" fill-opacity="0.8" stroke="#000000" cx="50"/>';
     
                 //evenly space out labels            
-                var textY = i * 20 + 20;            
+                var textY = i * 35 + 20;            
     
                 //text string            
-                svg += '<text id="' + circles[i] + '-text" x="65" y="' + textY + '">' + Math.round(dataStats[circles[i]]*100)/100 + " million" + '</text>';
+                svg += '<text id="' + circles[i] + '-text" x="120" y="' + textY + '">' + Math.round(dataStats[circles[i]]*100)/100 + " feet" + '</text>';
             };
     
             //close svg string
@@ -291,8 +297,9 @@ function getData(){
             //call function to create proportional symbols
             createPropSymbols(json, attributes);
             createSequenceControls(attributes);
+            calcStats(json); 
             createLegend(attributes);
-            calcStats(response); 
+        
         })
 };
 
