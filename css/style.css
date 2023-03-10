@@ -5,4 +5,38 @@ body{
 map{
     height:100vh;
     width:100vw;
+    display: inline-block;
+}
+
+.sequence-control-container {  
+    width: 350px;  
+    height: 30px;  
+    background-color: rgba(255,255,255,0.8);  
+    padding: 10px;  
+    line-height: 45px;  
+    text-align: center;  
+    border: solid gray 1px;  
+}  
+
+.range-slider {  
+    width: 250px;  
+}  
+
+.step {  
+    width: 40px;  
+}  
+
+.step img {  
+    width: 100%;  
+    height: auto;  
+} 
+
+.legend-control-container {
+    width: 225px;  
+    height: 40px;  
+    background-color: rgba(255,255,255,0.8);  
+    padding: 10px;  
+    line-height: 45px;  
+    text-align: center;  
+    border: solid black 1px;  ;  
 }

@@ -1,6 +1,7 @@
 //declare map variable globally so all functions have access
 var map;
 var minValue;
+var dataStats = {};
 
 //step 1 create map
 function createMap(){
@@ -42,6 +43,17 @@ console.log(minValue)
     return minValue;
 }
 
+function createPopupContent(properties, attribute){
+    //add city to popup content string
+    var popupContent = "<p><b>Site:</b> " + properties.site + "</p>";
+
+    //add formatted attribute to panel content string
+    var date = attribute.split("_")[1];
+    popupContent += "<p><b>Depth to water on " + date + ":</b> " + properties[attribute] + " feet.</p>";
+
+    return popupContent;
+};
+
 //calculate the radius of each proportional symbol
 function calcPropRadius(attValue) {
     //constant factor adjusts symbol sizes evenly
@@ -55,6 +67,27 @@ function calcPropRadius(attValue) {
     console.log(radius)
 
     return radius;
+};
+
+function calcStats(data){
+    //create empty array to store all data values
+    var allValues = [];
+    //loop through each city
+    for(var site of data.features){
+        //loop through each year
+        for(var date = 05; date <= 12; date+=1){
+              //get population for current year
+              var value = site.properties["d2019_"+ String(date)];
+              //add value to array
+              allValues.push(value);
+        }
+    }
+    //get min, max, mean stats for our array
+    dataStats.min = Math.min(...allValues);
+    dataStats.max = Math.max(...allValues);
+    //calculate meanValue
+    var sum = allValues.reduce(function(a, b){return a+b;});
+    dataStats.mean = sum/ allValues.length;
 };
 
 //function to convert markers to circle markers
@@ -84,12 +117,9 @@ function pointToLayer(feature, latlng, attributes){
     var layer = L.circleMarker(latlng, options);
 
     //build popup content string
-    var popupContent = "<p><b>Site:</b> " + feature.properties.site + "</p><p><b>" + attribute + ":</b> " + feature.properties[attribute] + " feet.";
-
-    //bind the popup to the circle marker
-    layer.bindPopup(popupContent, {
-        offset: new L.Point(0,-options.radius) 
-    });
+    var popupContent = createPopupContent(feature.properties, attribute);
+    //bind the popup to the circle marker    
+    layer.bindPopup(popupContent, {  offset: new L.Point(0,-options.radius)    });
     //return the circle marker to the L.geoJson pointToLayer option
     return layer;
 };
@@ -104,28 +134,29 @@ function createPropSymbols(data, attributes){
     }).addTo(map);
 };
 
-function createSequenceControls(attributes){
-    //create range input element (slider)
-    var slider = "<input class='range-slider' type='range'></input>";
-    document.querySelector("#panel").insertAdjacentHTML('beforeend',slider);
-    document.querySelector('#panel').insertAdjacentHTML('beforeend','<button class="step" id="forward">Forward</button>');
-    document.querySelector('#forward').insertAdjacentHTML('beforeend',"<img src='img/forward.png'>")
-    document.querySelector(".range-slider").max = 7;
-    document.querySelector(".range-slider").min = 0;
-    document.querySelector(".range-slider").value = 0;
-    document.querySelector(".range-slider").step = 1;
-    document.querySelector('#panel').insertAdjacentHTML('beforeend','<button class="step" id="reverse">Reverse</button>');
-    document.querySelector('#reverse').insertAdjacentHTML('beforeend',"<img src='img/reverse.png'>")
-    document.addEventListener('DOMContentLoaded',createMap)
-     //Below Example 3.6 in createSequenceControls()
+//Create new sequence controls
+function createSequenceControls(attributes){   
+    var SequenceControl = L.Control.extend({
+        options: {
+            position: 'bottomleft'
+        },
 
-    //Step 5: input listener for slider
-    document.querySelector('.range-slider').addEventListener('input', function(){            
-        var index = this.value;
-        console.log(index)
-        updatePropSymbols(attributes[index]);
+        onAdd: function () {
+            // create the control container div with a particular class name
+            var container = L.DomUtil.create('div', 'sequence-control-container');
 
-    });
+            //create range input element (slider)
+            container.insertAdjacentHTML('beforeend', '<input class="range-slider" type="range">')
+
+            //add skip buttons
+            container.insertAdjacentHTML('beforeend', '<button class="step" id="reverse" title="Reverse"><img src="img/reverse.png"></button>'); 
+            container.insertAdjacentHTML('beforeend', '<button class="step" id="forward" title="Forward"><img src="img/forward.png"></button>');
+            L.DomEvent.disableClickPropagation(container);
+
+            return container;
+        }});
+
+    map.addControl(new SequenceControl());  
     document.querySelectorAll('.step').forEach(function(step){
         step.addEventListener("click", function(){
             var index = document.querySelector('.range-slider').value;
@@ -144,7 +175,83 @@ function createSequenceControls(attributes){
             //Step 8: update slider
             document.querySelector('.range-slider').value = index;
             updatePropSymbols(attributes[index]);
+        })
+    })
 
+    //Step 5: input listener for slider
+    document.querySelector('.range-slider').addEventListener('input', function(){
+        //Step 6: get the new index value
+        var index = this.value;
+        console.log(index)
+        updatePropSymbols(attributes[index]);
+    })
+
+};    
+
+function createLegend(attributes){
+    var LegendControl = L.Control.extend({
+        options: {
+            position: 'bottomright'
+        },
+
+        onAdd: function () {
+            // create the control container with a particular class name
+            var container = L.DomUtil.create('div', 'legend-control-container');
+
+            container.innerHTML = '<p class="temporalLegend">Depth to water in <span class="date">2019_5</span></p>';
+
+            //Step 1: start attribute legend svg string
+            var svg = '<svg id="attribute-legend" width="130px" height="130px">';
+
+            //array of circle names to base loop on
+            var circles = ["max", "mean", "min"];
+    
+            //Step 2: loop to add each circle and text to svg string
+            for (var i=0; i<circles.length; i++){
+
+                //Step 3: assign the r and cy attributes            
+                var radius = calcPropRadius(dataStats[circles[i]]);           
+                var cy = 130 - radius;            
+    
+                //circle string            
+                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#F47821" fill-opacity="0.8" stroke="#000000" cx="65"/>';
+    
+                //evenly space out labels            
+                var textY = i * 20 + 20;            
+    
+                //text string            
+                svg += '<text id="' + circles[i] + '-text" x="65" y="' + textY + '">' + Math.round(dataStats[circles[i]]*100)/100 + " million" + '</text>';
+            };
+    
+            //close svg string
+            svg += "</svg>";
+    
+            //add attribute legend svg to container
+            container.insertAdjacentHTML('beforeend',svg);
+
+            return container;
+        }
+    });
+
+    map.addControl(new LegendControl());
+    document.querySelectorAll('.step').forEach(function(step){
+        step.addEventListener("click", function(){
+            var index = document.querySelector('.legend-control-container').value;
+
+            //Step 6: increment or decrement depending on button clicked
+            if (step.id == 'forward'){
+                index++;
+                //Step 7: if past the last attribute, wrap around to first attribute
+                index = index > 7 ? 0 : index;
+            } else if (step.id == 'reverse'){
+                index--;
+                //Step 7: if past the first attribute, wrap around to last attribute
+                index = index < 0 ? 7 : index;
+            };
+
+            //Step 8: update slider
+            document.querySelector('.legend-control-container').value = index;
+            updatePropSymbols(attributes[index]);
         })
     })
 };
@@ -184,11 +291,16 @@ function getData(){
             //call function to create proportional symbols
             createPropSymbols(json, attributes);
             createSequenceControls(attributes);
+            createLegend(attributes);
+            calcStats(response); 
         })
 };
 
 //Step 10: Resize proportional symbols according to new attribute values
 function updatePropSymbols(attribute){
+    var date = attribute.split("_")[1];
+    //update temporal legend
+    document.querySelector("span.date").innerHTML = date;
     map.eachLayer(function(layer){
           //Example 3.18 line 4
           if (layer.feature && layer.feature.properties[attribute]){
@@ -200,15 +312,10 @@ function updatePropSymbols(attribute){
             layer.setRadius(radius);
 
             //add city to popup content string
-            var popupContent = "<p><b>Site:</b> " + props.site + "</p>";
-
-            //add formatted attribute to panel content string
-            var date = attribute.split("_")[1];
-            popupContent += "<p><b>Depth to water on " + date + ":</b> " + props[attribute] + " feet</p>";
-
-            //update popup content            
-            popup = layer.getPopup();            
-            popup.setContent(popupContent).update();
+             var popupContent = createPopupContent(props, attribute);    
+    //update popup with new content    
+    popup = layer.getPopup();    
+    popup.setContent(popupContent).update();
         };
     });
 };
